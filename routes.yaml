@@ -1,0 +1,215 @@
+openapi: 3.0.0
+info:
+  title: File Management API
+  description: API для управления списками файлов и их хешами в базе данных SQLite.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Локальный сервер
+
+paths:
+  /verify/create_list:
+    post:
+      summary: Создание нового списка (таблицы)
+      description: Создает новый список для хранения файлов.
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: Имя списка для создания.
+          schema:
+            type: string
+        - name: secret_key
+          in: query
+          required: true
+          description: Секретный ключ для проверки доступа.
+          schema:
+            type: string
+      responses:
+        201:
+          description: Список успешно создан.
+        400:
+          description: Параметр 'type' не указан или список уже существует.
+        403:
+          description: Неверный секретный ключ.
+        500:
+          description: Ошибка при создании списка.
+
+  /verify/list:
+    get:
+      summary: Получение списка файлов
+      description: Возвращает список файлов и их хешей для указанного типа.
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: Имя списка для получения файлов.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Успешное получение файлов.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
+        400:
+          description: Параметр 'type' не указан.
+        404:
+          description: Список не существует.
+        500:
+          description: Ошибка при чтении данных из базы данных.
+
+  /verify/add:
+    post:
+      summary: Добавление файла в список
+      description: Добавляет новый файл с хешем в указанный список.
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: Имя списка для добавления файла.
+          schema:
+            type: string
+        - name: secret_key
+          in: query
+          required: true
+          description: Секретный ключ для проверки доступа.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/File'
+      responses:
+        201:
+          description: Файл успешно добавлен.
+        400:
+          description: Неверный формат данных или параметр 'type' не указан.
+        403:
+          description: Неверный секретный ключ.
+        404:
+          description: Список не существует.
+        500:
+          description: Ошибка добавления файла в базу данных.
+
+  /verify/remove:
+    delete:
+      summary: Удаление файла из списка
+      description: Удаляет файл из указанного списка по имени файла.
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: Имя списка для удаления файла.
+          schema:
+            type: string
+        - name: name
+          in: query
+          required: true
+          description: Имя файла для удаления.
+          schema:
+            type: string
+        - name: secret_key
+          in: query
+          required: true
+          description: Секретный ключ для проверки доступа.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Файл успешно удален.
+        400:
+          description: Параметры 'type' или 'name' не указаны.
+        403:
+          description: Неверный секретный ключ.
+        404:
+          description: Список или файл не существует.
+        500:
+          description: Ошибка удаления файла из базы данных.
+
+  /verify/remove_list:
+    delete:
+      summary: Удаление списка файлов
+      description: Удаляет весь список (таблицу) с файлами.
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: Имя списка для удаления.
+          schema:
+            type: string
+        - name: secret_key
+          in: query
+          required: true
+          description: Секретный ключ для проверки доступа.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Список успешно удален.
+        400:
+          description: Параметр 'type' не указан.
+        403:
+          description: Неверный секретный ключ.
+        404:
+          description: Список не существует.
+        500:
+          description: Ошибка удаления списка.
+
+  /verify/move:
+    put:
+      summary: Перемещение файла между списками
+      description: Перемещает файл из одного списка в другой.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: Список, из которого перемещается файл.
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: true
+          description: Список, в который перемещается файл.
+          schema:
+            type: string
+        - name: name
+          in: query
+          required: true
+          description: Имя файла для перемещения.
+          schema:
+            type: string
+        - name: secret_key
+          in: query
+          required: true
+          description: Секретный ключ для проверки доступа.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Файл успешно перемещен.
+        400:
+          description: Параметры 'from', 'to' или 'name' не указаны.
+        403:
+          description: Неверный секретный ключ.
+        404:
+          description: Список или файл не существует.
+        500:
+          description: Ошибка перемещения файла.
+
+components:
+  schemas:
+    File:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Имя файла.
+        hash:
+          type: string
+          description: Хеш файла.
